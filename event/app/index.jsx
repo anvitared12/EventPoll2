@@ -1,20 +1,29 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Animated, Text, View } from 'react-native';
 import { router } from 'expo-router';
+import { useAuth } from '../context/AuthContext';
 
 const FadeInView = props => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
+    const { user, loading } = useAuth();
 
     useEffect(() => {
-        Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 5000,
-            useNativeDriver: true,
-        }).start(() => {
-            // Navigate to sign-up after animation completes
-            router.replace('/sign-up');
-        });
-    }, [fadeAnim]);
+        if (!loading) {
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 2000,
+                useNativeDriver: true,
+            }).start(() => {
+                // Navigate based on authentication status
+                if (user) {
+                    router.replace('/pollCreate');
+                } else {
+                    router.replace('/sign-up');
+                }
+            });
+        }
+    }, [fadeAnim, user, loading]);
+
 
     return (
         <Animated.View
@@ -26,6 +35,8 @@ const FadeInView = props => {
         </Animated.View>
     )
 }
+
+
 
 export default () => {
     return (

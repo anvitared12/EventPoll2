@@ -1,11 +1,45 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
+import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
-    const [Lemail, LsetEmail] = useState('');
-    const [Lpassword, setLpassword] = useState('')
     const router = useRouter();
+    const { signIn } = useAuth();
+    const [Lemail, LsetEmail] = useState('');
+    const [Lpassword, setLpassword] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+
+    const handleLogin = async () => {
+        // Reset error
+        setError('');
+
+        // Validation
+        if (!Lemail.trim()) {
+            setError('Please enter your email');
+            return;
+        }
+
+        if (!Lpassword) {
+            setError('Please enter your password');
+            return;
+        }
+
+        setLoading(true);
+
+        const result = await signIn(Lemail, Lpassword);
+
+        setLoading(false);
+
+        if (result.success) {
+            // Navigate to poll create screen on successful login
+            router.replace('/pollCreate');
+        } else {
+            // Show error message
+            setError(result.error || 'Failed to login');
+        }
+    };
 
     return (
         <View style={styles.container}>
@@ -16,12 +50,17 @@ export default function Login() {
             <Text style={styles.headerText}>Login</Text>
 
             <View style={styles.inputContainer}>
+
                 <TextInput
                     style={styles.input}
                     placeholder="Enter Email"
                     placeholderTextColor="#C4C4C4"
                     value={Lemail}
-                    onChangeText={LsetEmail} />
+                    onChangeText={LsetEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    editable={!loading}
+                />
 
                 <TextInput
                     style={styles.input}
@@ -30,17 +69,35 @@ export default function Login() {
                     value={Lpassword}
                     onChangeText={setLpassword}
                     secureTextEntry
+                    editable={!loading}
                 />
 
             </View>
 
-            <TouchableOpacity style={styles.button} onPress={() => router.replace('/pollCreate')}>
-                <Text style={styles.buttonText}>Submit</Text>
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+            <TouchableOpacity 
+                style={[styles.button, loading && styles.buttonDisabled]} 
+                onPress={handleLogin}
+                disabled={loading}
+            >
+                {loading ? (
+                    <ActivityIndicator color="#000" />
+                ) : (
+                    <Text style={styles.buttonText}>Submit</Text>
+                )}
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => router.replace('/sign-up')} disabled={loading}>
+                <Text style={styles.signUpText}>Don't have an account? Sign Up</Text>
             </TouchableOpacity>
 
         </View>
     )
 }
+
+
+// StyleSheet ---------------------------------------------------------------------------------
 
 const styles = StyleSheet.create({
     container: {
@@ -79,5 +136,20 @@ const styles = StyleSheet.create({
         fontFamily: 'RoarGuroes',
         fontSize: 24,
         color: '#000',
+    },
+    buttonDisabled: {
+        opacity: 0.6,
+    },
+    errorText: {
+        color: '#D32F2F',
+        fontSize: 14,
+        marginBottom: 15,
+        textAlign: 'center',
+    },
+    signUpText: {
+        fontFamily: 'RoarGuroes',
+        fontSize: 16,
+        color: '#2D2D2D',
+        marginTop: 15,
     },
 });

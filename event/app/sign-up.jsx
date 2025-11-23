@@ -1,12 +1,56 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
+import { useAuth } from '../context/AuthContext';
 
 export default function SignUp() {
     const router = useRouter();
+    const { signUp } = useAuth();
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+
+    const handleSignUp = async () => {
+        // Reset error
+        setError('');
+
+        // Validation
+        if (!name.trim()) {
+            setError('Please enter your name');
+            return;
+        }
+
+        if (!email.trim()) {
+            setError('Please enter your email');
+            return;
+        }
+
+        if (!password) {
+            setError('Please enter a password');
+            return;
+        }
+
+        if (password.length < 6) {
+            setError('Password must be at least 6 characters');
+            return;
+        }
+
+        setLoading(true);
+
+        const result = await signUp(email, password, name);
+
+        setLoading(false);
+
+        if (result.success) {
+            // Navigate to poll create screen on successful sign up
+            router.replace('/pollCreate');
+        } else {
+            // Show error message
+            setError(result.error || 'Failed to create account');
+        }
+    };
 
     return (
         <View style={styles.container}>
@@ -21,6 +65,7 @@ export default function SignUp() {
                     placeholderTextColor="#C4C4C4"
                     value={name}
                     onChangeText={setName}
+                    editable={!loading}
                 />
                 <TextInput
                     style={styles.input}
@@ -30,6 +75,7 @@ export default function SignUp() {
                     onChangeText={setEmail}
                     keyboardType="email-address"
                     autoCapitalize="none"
+                    editable={!loading}
                 />
                 <TextInput
                     style={styles.input}
@@ -38,18 +84,32 @@ export default function SignUp() {
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry
+                    editable={!loading}
                 />
             </View>
 
-            <TouchableOpacity style={styles.button} onPress={() => router.replace('/Login')}>
-                <Text style={styles.buttonText}>Submit</Text>
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+            <TouchableOpacity 
+                style={[styles.button, loading && styles.buttonDisabled]} 
+                onPress={handleSignUp}
+                disabled={loading}
+            >
+                {loading ? (
+                    <ActivityIndicator color="#000" />
+                ) : (
+                    <Text style={styles.buttonText}>Submit</Text>
+                )}
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.replace('/Login')}>
+
+            <TouchableOpacity onPress={() => router.replace('/Login')} disabled={loading}>
                 <Text style={styles.loginText}>Already have an account? Login</Text>
             </TouchableOpacity>
         </View>
     );
 }
+
+//StyleSheet -------------------------------------------------------------------------------------
 
 const styles = StyleSheet.create({
     container: {
@@ -88,5 +148,20 @@ const styles = StyleSheet.create({
         fontFamily: 'RoarGuroes',
         fontSize: 24,
         color: '#000',
+    },
+    buttonDisabled: {
+        opacity: 0.6,
+    },
+    errorText: {
+        color: '#D32F2F',
+        fontSize: 14,
+        marginBottom: 15,
+        textAlign: 'center',
+    },
+    loginText: {
+        fontFamily: 'RoarGuroes',
+        fontSize: 16,
+        color: '#2D2D2D',
+        marginTop: 15,
     },
 });

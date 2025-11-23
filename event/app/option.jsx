@@ -1,8 +1,22 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, Image, TextInput, TouchableOpacity } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
+import { useAuth } from '../context/AuthContext';
 
 export default function Option() {
+    const { user } = useAuth();
+    const router = useRouter();
+
+    useEffect(() => {
+        // Redirect to login if not authenticated
+        if (!user) {
+            router.replace('/Login');
+        }
+    }, [user]);
+
+    if (!user) {
+        return null;
+    }
     const [name, setName] = useState('');
     const [options, setOptions] = useState(['', '']);
 
@@ -52,6 +66,8 @@ export default function Option() {
         </View>
     );
 }
+
+//StyleSheet -------------------------------------------------------------------------------------
 
 const styles = StyleSheet.create({
     container: {
